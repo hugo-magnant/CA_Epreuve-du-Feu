@@ -1,11 +1,9 @@
-# exo.rb
-
 # Fonction pour lire un fichier et le convertir en tableau 2D
 def read_board_from_file(file)
   board = []
-  File.open(file, 'r') do |f|
+  File.open(file, "r") do |f|
     f.each_line do |line|
-      board << line.chomp.split('')
+      board << line.chomp.split("")
     end
   end
   board
@@ -24,14 +22,14 @@ def find_shape(board, shape)
             break
           end
           board_col = board_row[col_index + shape_col_index]
-          if board_col.nil? || (shape_col != ' ' && shape_col != board_col)
+          if board_col.nil? || (shape_col != " " && shape_col != board_col)
             found = false
             break
           end
         end
         break unless found
       end
-      return [row_index + 1, col_index + 1] if found
+      return [row_index, col_index] if found
     end
   end
   nil
@@ -55,11 +53,21 @@ begin
     puts "Introuvable"
   else
     puts "Trouvé !"
-    puts "Coordonnées : #{coordinates.join(',')}"
-    puts '----'
-    shape.each { |row| puts row.join('') }
-  end
+    puts "Coordonnées : #{coordinates.reverse.join(",")}"
 
+    # Remplacer les caractères du tableau original par des tirets
+    new_board = board.map { |row| row.map { |cell| "-" } }
+
+    # Remplacer la forme trouvée par la forme d'origine
+    shape.each_with_index do |shape_row, shape_row_index|
+      shape_row.each_with_index do |shape_col, shape_col_index|
+        new_board[coordinates[0] + shape_row_index][coordinates[1] + shape_col_index] = shape_col
+      end
+    end
+
+    # Afficher le nouveau tableau
+    new_board.each { |row| puts row.join("") }
+  end
 rescue Exception => e
   puts "error"
 end

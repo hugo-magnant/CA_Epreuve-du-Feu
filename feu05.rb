@@ -1,62 +1,60 @@
-require 'queue'
+def solve_maze(filename)
+  puts "Programme démarré"
 
-def bfs(map, start, finish)
-  visited = {}
-  queue = Queue.new
-  queue.push([start, 0])
+  lines = File.readlines(filename).map(&:chomp)
+  maze_info, *maze = lines
 
-  while !queue.empty?
-    coords, steps = queue.pop
-    x, y = coords
+  rows, cols, full, empty, path, entry, exit = maze_info.match(/^(\d{2})x(\d{2})(.)(.)(.)(.)(.)$/).captures
 
-    next if visited[[x, y]]
-    visited[[x, y]] = steps
-
-    return steps if [x, y] == finish
-
-    [[x+1, y], [x-1, y], [x, y+1], [x, y-1]].each do |nx, ny|
-      next if map[ny][nx] == '*'
-      next if visited[[nx, ny]]
-      queue.push([[nx, ny], steps+1])
+  start = nil
+  goal = nil
+  maze.each_with_index do |row, y|
+    row.chars.each_with_index do |cell, x|
+      start = [y, x] if cell == entry
+      goal = [y, x] if cell == exit
     end
   end
 
-  nil
-end
+  if start.nil? || goal.nil?
+    puts "Entrée ou sortie manquante"
+    return
+  end
 
-# Vérifier les arguments et lire le fichier
-if ARGV.length != 1
-  puts 'error'
-  exit(1)
-end
+  puts "Start trouvé à : #{start.inspect}"
+  puts "Goal trouvé à : #{goal.inspect}"
 
-begin
-  lines = File.readlines(ARGV[0]).map(&:chomp)
-  meta, *map = lines
+  queue = [start]
+  visited = { start => nil }
+  while queue.any?
+    current = queue.shift
+    y, x = current
 
-  rows, cols, full, empty, path, entry, exit = meta.split('')
-  rows = rows.to_i
-  cols = cols.to_i
+    if current == goal
+      while current
+        y, x = current
+        maze[y][x] = path if maze[y][x] == empty
+        current = visited[current]
+      end
 
-  start = []
-  finish = []
+      puts maze.join("\n")
+      return puts "=> SORTIE ATTEINTE EN #{visited.size} COUPS !"
+    end
 
-  rows.times do |y|
-    cols.times do |x|
-      start = [x, y] if map[y][x] == entry
-      finish = [x, y] if map[y][x] == exit
+    [[-1, 0], [1, 0], [0, -1], [0, 1]].each do |dy, dx|
+      neighbor = [y + dy, x + dx]
+      if maze[neighbor[0]][neighbor[1]] != full && !visited.has_key?(neighbor)
+        queue << neighbor
+        visited[neighbor] = current
+      end
     end
   end
 
-  distance = bfs(map, start, finish)
+  # Ajout d'un message d'erreur si aucun trajet n'est trouvé
+  puts "Aucun trajet n'a été trouvé entre l'entrée et la sortie."
+end
 
-  if distance
-    puts map.map(&:join).join("\n")
-    puts "=> SORTIE ATTEINTE EN #{distance} COUPS !"
-  else
-    puts 'PAS DE SOLUTION'
-  end
-
-rescue
-  puts 'error'
+if ARGV.count == 1
+  solve_maze(ARGV[0])
+else
+  puts "Usage: ruby exo.rb [filename]"
 end
